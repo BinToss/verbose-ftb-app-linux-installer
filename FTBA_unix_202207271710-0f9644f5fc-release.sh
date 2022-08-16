@@ -99,9 +99,9 @@ check_date_output() {
 test_jvm() {
   tested_jvm=na
   test_dir=$1
-  bin_dir=$test_dir/bin
-  java_exc=$bin_dir/java
-  if [ -z "$test_dir" ] || [ ! -d "$bin_dir" ] || [ ! -f "$java_exc" ] || [ ! -x "$java_exc" ]; then
+  bin_dir=$test_dir/bin; echo "test_jvm: '\$test_dir/bin' ('$test_dir/bin') was assigned to \$bin_dir"
+  java_exc=$bin_dir/java; echo "test_jvm: '\$bin_dir/java' ('$bin_dir/java') assigned to \$java_exec"
+  if [ -z "$test_dir" ] || [ ! -d "$bin_dir" ] || [ ! -f "$java_exc" ] || [ ! -x "$java_exc" ]; then echo "[ERROR] test_jvm: \$test_dir ('$test_dir') is empty -OR- \$bin_dir ('$bin_dir') does not exist or is not a direcotry -OR- \$java_exec ('$java_exec') does not exist or is not a file -OR- \$java_exec ('$java_exec') does not exist or is not an executable file."
     return
   fi
 
@@ -184,7 +184,7 @@ read_vmoptions() {
     exec 8< "$vmoptions_file"
     while read cur_option<&8; do
       is_comment=`expr "W$cur_option" : 'W *#.*'`
-      if [ "$is_comment" = "0" ]; then 
+      if [ "$is_comment" = "0" ]; then
         vmo_classpath=`expr "W$cur_option" : 'W *-classpath \(.*\)'`
         vmo_classpath_a=`expr "W$cur_option" : 'W *-classpath/a \(.*\)'`
         vmo_classpath_p=`expr "W$cur_option" : 'W *-classpath/p \(.*\)'`
@@ -206,7 +206,7 @@ read_vmoptions() {
           local_classpath="${vmo_classpath_p}:${local_classpath}"
         elif [ "W$vmo_include" = "W" ]; then
           needs_quotes=`expr "W$cur_option" : 'W.* .*'`
-          if [ "$needs_quotes" = "0" ]; then 
+          if [ "$needs_quotes" = "0" ]; then
             vmoptions_val="$vmoptions_val $cur_option"
           else
             if [ "W$vmov_1" = "W" ]; then
@@ -245,85 +245,85 @@ read_vmoptions() {
 
 
 unpack_file() {
-  if [ -f "$1" ]; then
-    jar_file=`echo "$1" | awk '{ print substr($0,1,length($0)-5) }'`
+  if [ -f "$1" ]; then echo "unpack_file: the file '$1' exists. Assigning value of expression `echo '$1' \| awk '{print substr($0,1,length($0)-5)}'` to \$jar_file..."
+    jar_file=`echo "$1" | awk '{ print substr($0,1,length($0)-5) }'`; echo "run_unpack: calling app 'bin/unpack200' with args '-r \"$1\" \"$jar_file\"', printing stdout to /dev/null, and printing stderr to &1..."
     bin/unpack200 -r "$1" "$jar_file" > /dev/null 2>&1
 
     if [ $? -ne 0 ]; then
       echo "Error unpacking jar files. The architecture or bitness (32/64)"
       echo "of the bundled JVM might not match your machine."
       returnCode=1
-      cd "$old_pwd"
-      if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then
+      cd "$old_pwd"; echo "run_unpack: working directory was restored to \$old_pwd ('$old_pwd')"
+      if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then echo "run_unpack: the value of \$INSTALL4J_KEEP_TEMP is not 'yes'. Recursively and forcefully removing path \$sfx_dir_name ('$sfx_dir_name')..."
         rm -R -f "$sfx_dir_name"
       fi
       exit $returnCode
     else
-      chmod a+r "$jar_file"
+      chmod a+r "$jar_file"; echo "run_unpack: Read permission granted for \$jar_file ('$jar_file')"
     fi
   fi
 }
 
 run_unpack200() {
-  if [ -d "$1/lib" ]; then
-    old_pwd200=`pwd`
-    cd "$1"
+  if [ -d "$1/lib" ]; then echo "run_unpack: the path '$1/lib' exists and is a directory"
+    old_pwd200=`pwd`; echo "run_unpack: \$old_pwd200 was set to working directory"
+    cd "$1"; echo "run_unpack: working directory was set to '$1'"; echo "run_unpack: unpacking all files matching 'lib/*.jar.pack'..."
     for pack_file in lib/*.jar.pack
     do
       unpack_file $pack_file
-    done
+    done; echo "run_unpack: unpacking all files matching 'lib/ext/*.jar.pack'..."
     for pack_file in lib/ext/*.jar.pack
     do
       unpack_file $pack_file
     done
-    cd "$old_pwd200"
+    cd "$old_pwd200"; echo "run_unpack: working directory was set to \$old_pwd200 ('$old_pwd200')"
   fi
 }
 
 search_jre() {
-if [ -z "$app_java_home" ]; then
+  if [ -z "$app_java_home" ]; then echo "search_jre step 1: \$app_java_home is empty. Calling test_jvm() with arg \$INSTALL4J_JAVA_HOME_OVERRIDE ('$INSTALL4J_JAVA_HOME_OVERRIDE')..."
   test_jvm "$INSTALL4J_JAVA_HOME_OVERRIDE"
 fi
 
-if [ -z "$app_java_home" ]; then
-if [ -f "$app_home/.install4j/pref_jre.cfg" ]; then
-    read file_jvm_home < "$app_home/.install4j/pref_jre.cfg"
+  if [ -z "$app_java_home" ]; then echo "search_jre step 2: \$app_java_home is still empty."
+    if [ -f "$app_home/.install4j/pref_jre.cfg" ]; then echo "search_jre step 2: '$app_home/.install4j/pref_jre.cfg' exists. Assigining content to \$file_jvm_home..."
+        read file_jvm_home < "$app_home/.install4j/pref_jre.cfg"; echo "search_jre step 2: The value of \$file_jvm_home is '$file_jvm_home'. Calling test_jvm() with arg '\$file_jvm_home'...".
     test_jvm "$file_jvm_home"
-    if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then
-if [ -f "$db_file" ]; then
+        if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then echo "search_jre step 2: \$app_java_home is still empty. \$tested_jvm is 'false'."
+          if [ -f "$db_file" ]; then echo "search_jre step 2: attempting to silently delete \$db_file ('$db_file')..."
   rm "$db_file" 2> /dev/null
-fi
+          fi; echo "search_jre step 2: Calling test_jvm with arg '\$file_jvm' ('$file_jvm')..."
         test_jvm "$file_jvm_home"
     fi
 fi
 fi
 
-if [ -z "$app_java_home" ]; then
-  test_jvm "$app_home/../jre.bundle/Contents/Home" 
-  if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then
-if [ -f "$db_file" ]; then
+  if [ -z "$app_java_home" ]; then echo "search_jre step 3: \$app_java_home is still empty. Calling test_jvm() with arg '\$app_home/../jre.bundle/Contents/Home' ('$app_home/../jre.bundle/Contents/Home')."
+  test_jvm "$app_home/../jre.bundle/Contents/Home"
+    if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then echo "search_jre step 3: \$app_java_home is still empty and \$tested_jvm is false."
+      if [ -f "$db_file" ]; then echo "search_jre step 3: attempting to silently delete \$db_file ('$db_file')..."
   rm "$db_file" 2> /dev/null
-fi
+      fi echo "search_jre step 3: Calling test_jvm with arg '\$app_home/../jre.bundle/Contents/Home' ('$app_home/../jre.bundle/Contents/Home')..."
     test_jvm "$app_home/../jre.bundle/Contents/Home"
   fi
 fi
 
-if [ -z "$app_java_home" ]; then
-  if [ "W$INSTALL4J_NO_PATH" != "Wtrue" ]; then
+  if [ -z "$app_java_home" ]; then echo "search_jre step 4: \$app_java_home is still empty."
+    if [ "W$INSTALL4J_NO_PATH" != "Wtrue" ]; then echo "search_jre step 4: \$INSTALL4J_NO_PATH is false. Assigning value of expression `command -v java 2\> /dev/null` to \$prg_jvm..."
     prg_jvm=`command -v java 2> /dev/null`
-    if [ "$?" -ne "0" ] || [ "W$prg_jvm" = "W" ]; then
+      if [ "$?" -ne "0" ] || [ "W$prg_jvm" = "W" ]; then echo "search_jre step 4: var arg \$? ($?) is unequal to 0 -OR- \$prg_jvm ('$prg_jvm') is empty. Assigning value of expression `which java 2\> /dev/null` to \$prg_jvm..."
       prg_jvm=`which java 2> /dev/null`
-      if [ "$?" -ne "0" ]; then
+        if [ "$?" -ne "0" ]; then echo "search_jre step 4: var arg \$? ($?) is unequal to 0. Assigning empty string to \$prg_jvm..."
         prg_jvm=""
       fi
     fi
-    if [ ! -z "$prg_jvm" ] && [ -f "$prg_jvm" ]; then
-      old_pwd_jvm=`pwd`
-      path_java_bin=`dirname "$prg_jvm"`
-      cd "$path_java_bin"
-      prg_jvm=java
+      if [ ! -z "$prg_jvm" ] && [ -f "$prg_jvm" ]; then echo "search_jre step 4: \$prg_jvm ('$prg_jvm') is not empty and the file exists."
+        old_pwd_jvm=`pwd`; echo "search_jre step 4: current process working directory has been assigned to \$old_pwd_jvm ('$old_pwd_jvm')."
+        path_java_bin=`dirname "$prg_jvm"`; echo "search_jre step 4: the path of the parent directory of \$prg_jvm has been assigned to \$path_java_bin ('$path_java_bin')."
+        cd "$path_java_bin"; echo "search_jre step 4: the working directory has been set to \$path_java_bin ('$path_java_bin')."
+        prg_jvm=java; echo "search_jre step 4: the value of \$java has been assigned to \$prg_jvm ('$prg_jvm')."
 
-      while [ -h "$prg_jvm" ] ; do
+        while [ -h "$prg_jvm" ] ; do echo "search_jre step 4: \$prg_jvm ('$prg_jvm') exists and is a symbolic link. This will loop until either condition is false."
         ls=`ls -ld "$prg_jvm"`
         link=`expr "$ls" : '.*-> \(.*\)$'`
         if expr "$link" : '.*/.*' > /dev/null; then
@@ -332,48 +332,48 @@ if [ -z "$app_java_home" ]; then
           prg_jvm="`dirname $prg_jvm`/$link"
         fi
       done
-      path_java_bin=`dirname "$prg_jvm"`
-      cd "$path_java_bin"
-      cd ..
-      path_java_home=`pwd`
-      cd "$old_pwd_jvm"
-      test_jvm "$path_java_home"
+        path_java_bin=`dirname "$prg_jvm"`; echo "search_jre step 4: Path of parent directory of \$prg_jvm ('$prg_jvm') was assigned to \$path_java_bin ('$path_java_bin')."
+        cd "$path_java_bin"; echo "search_jre step 4: working directory was set to \$path_java_bin ('$path_java_bin')"
+        cd ..; echo "search_jre step 4: working directory was set to parent directory"
+        path_java_home=`pwd`; echo "search_jre step 4: \$path_java_home was set to working directory ('$path_java_home')"
+        cd "$old_pwd_jvm"; echo "search_jre step 4: working directory restored to \$old_pwd_jvm ('$old_pwd_jvm')"; "search_jre step 4: calling test_jvm() with arg \$path_java_home ('$path_java_home')..."
+        test_jvm "$path_java_home";
     fi
   fi
 fi
 
 
-if [ -z "$app_java_home" ]; then
-  common_jvm_locations="/opt/i4j_jres/* /usr/local/i4j_jres/* $HOME/.i4j_jres/* /usr/bin/java* /usr/bin/jdk* /usr/bin/jre* /usr/bin/j2*re* /usr/bin/j2sdk* /usr/java* /usr/java*/jre /usr/jdk* /usr/jre* /usr/j2*re* /usr/j2sdk* /usr/java/j2*re* /usr/java/j2sdk* /opt/java* /usr/java/jdk* /usr/java/jre* /usr/lib/java/jre /usr/local/java* /usr/local/jdk* /usr/local/jre* /usr/local/j2*re* /usr/local/j2sdk* /usr/jdk/java* /usr/jdk/jdk* /usr/jdk/jre* /usr/jdk/j2*re* /usr/jdk/j2sdk* /usr/lib/jvm/* /usr/lib/java* /usr/lib/jdk* /usr/lib/jre* /usr/lib/j2*re* /usr/lib/j2sdk* /System/Library/Frameworks/JavaVM.framework/Versions/1.?/Home /Library/Internet\ Plug-Ins/JavaAppletPlugin.plugin/Contents/Home /Library/Java/JavaVirtualMachines/*.jdk/Contents/Home/jre /Library/Java/JavaVirtualMachines/*.jre/Contents/Home /Library/Java/JavaVirtualMachines/*.jdk/Contents/Home"
+  if [ -z "$app_java_home" ]; then echo "search_jre step 5: \$app_java_home is still empty."
+    common_jvm_locations="/opt/i4j_jres/* /usr/local/i4j_jres/* $HOME/.i4j_jres/* /usr/bin/java* /usr/bin/jdk* /usr/bin/jre* /usr/bin/j2*re* /usr/bin/j2sdk* /usr/java* /usr/java*/jre /usr/jdk* /usr/jre* /usr/j2*re* /usr/j2sdk* /usr/java/j2*re* /usr/java/j2sdk* /opt/java* /usr/java/jdk* /usr/java/jre* /usr/lib/java/jre /usr/local/java* /usr/local/jdk* /usr/local/jre* /usr/local/j2*re* /usr/local/j2sdk* /usr/jdk/java* /usr/jdk/jdk* /usr/jdk/jre* /usr/jdk/j2*re* /usr/jdk/j2sdk* /usr/lib/jvm/* /usr/lib/java* /usr/lib/jdk* /usr/lib/jre* /usr/lib/j2*re* /usr/lib/j2sdk* /System/Library/Frameworks/JavaVM.framework/Versions/1.?/Home /Library/Internet\ Plug-Ins/JavaAppletPlugin.plugin/Contents/Home /Library/Java/JavaVirtualMachines/*.jdk/Contents/Home/jre /Library/Java/JavaVirtualMachines/*.jre/Contents/Home /Library/Java/JavaVirtualMachines/*.jdk/Contents/Home"; echo "search_jre step 5: multiple paths assigned to \$common_jvm_locations ('$common_jvm_locations')"; echo "search_jre step 5: looping through \$common_jvm_locations..."
   for current_location in $common_jvm_locations
   do
-if [ -z "$app_java_home" ]; then
+      if [ -z "$app_java_home" ]; then echo "search_jre step 5: \$app_java_home is empty. Calling test_jvm() with arg \$current_location ('$current_location') in \$common_jvm_locations..."
   test_jvm "$current_location"
 fi
 
   done
 fi
 
-if [ -z "$app_java_home" ]; then
+  if [ -z "$app_java_home" ]; then echo "search_jre step 6: \$app_java_home is still empty. Calling test_jvm() with arg \$JAVA_HOME ('$JAVA_HOME')..."
   test_jvm "$JAVA_HOME"
 fi
 
-if [ -z "$app_java_home" ]; then
+  if [ -z "$app_java_home" ]; then echo "search_jre step 7: \$app_java_home is still empty. Calling test_jvm() with arg \$JDK_HOME ('$JDK_HOME')..."
   test_jvm "$JDK_HOME"
 fi
 
-if [ -z "$app_java_home" ]; then
+  if [ -z "$app_java_home" ]; then echo "search_jre step 8: \$app_java_home is still empty. Calling test_jvm() with arg \$INSTALL4J_JAVA_HOME ('$INSTALL4J_JAVA_HOME')..."
   test_jvm "$INSTALL4J_JAVA_HOME"
 fi
 
-if [ -z "$app_java_home" ]; then
-if [ -f "$app_home/.install4j/inst_jre.cfg" ]; then
-    read file_jvm_home < "$app_home/.install4j/inst_jre.cfg"
+  if [ -z "$app_java_home" ]; then echo "search_jre step 9: \$app_java_home is still empty."
+    if [ -f "$app_home/.install4j/inst_jre.cfg" ]; then echo "search_jre step 9: path '\$app_home/.install4j/inst_jre.cfg' ('$app_home/.install4j/inst_jre.cfg') exists."
+      read file_jvm_home < "$app_home/.install4j/inst_jre.cfg"; echo "search_jre step 9: contents of inst_jre.cfg assigned to \$file_jvm_home. Calling test_jvm() with arg \$file_jvm_home ('$file_jvm_home').."
     test_jvm "$file_jvm_home"
-    if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then
-if [ -f "$db_file" ]; then
+      if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then echo "search_jre step 9: \$app_java_home is still empty and \$tested_jvm is false."
+        if [ -f "$db_file" ]; then echo "search_jre step 9: attempting to silently delete \$db_file ('$db_file')..."
   rm "$db_file" 2> /dev/null
-fi
+        fi; echo "search_jre step 9: calling test_jvm() with arg \$file_jvm_home ('$file_jvm_home')..."
         test_jvm "$file_jvm_home"
     fi
 fi
@@ -526,7 +526,7 @@ if [ -f jre.tar.gz ]; then
   tar xf ../jre.tar
   app_java_home=`pwd`
   bundled_jre_home="$app_java_home"
-  cd ..
+  cd ..; echo "After unpacking JRE, \$app_java_home is '$app_java_home' and \$bundled_jre_home is '$bundled_jre_home'.";
 fi
 
 run_unpack200 "$bundled_jre_home"
@@ -537,10 +537,10 @@ else
     app_java_home=$app_java_home/jre
   fi
 fi
-search_jre
+search_jre; echo "func search_jre executed. \$app_java_home is '$app_java_home'" # see L283
 if [ -z "$app_java_home" ]; then
   echo "No suitable Java Virtual Machine could be found on your system."
-  
+
   wget_path=`command -v wget 2> /dev/null`
   if [ "$?" -ne "0" ] || [ "W$wget_path" = "W" ]; then
     wget_path=`which wget 2> /dev/null`
@@ -555,9 +555,9 @@ if [ -z "$app_java_home" ]; then
       curl_path=""
     fi
   fi
-  
+
   jre_http_url="https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.1%2B12/OpenJDK17U-jre_x64_linux_hotspot_17.0.1_12.tar.gz"
-  
+
   if [ -f "$wget_path" ]; then
       echo "Downloading JRE with wget ..."
       wget -O jre.tar.gz "$jre_http_url"
@@ -576,7 +576,7 @@ if [ -z "$app_java_home" ]; then
       fi
       exit $returnCode
   fi
-  
+
   if [ ! -f "jre.tar.gz" ]; then
       echo "Could not download JRE. Aborting."
       returnCode=1
@@ -676,10 +676,10 @@ echo "Starting Installer ..."
 
 return_code=0
 umask 0022
-if [ "$has_space_options" = "true" ]; then
+if [ "$has_space_options" = "true" ]; then echo "$app_java_home"
 $INSTALL4J_JAVA_PREFIX "$app_java_home/bin/java" -Dexe4j.moduleName="$prg_dir/$progname" -Dexe4j.totalDataLength=1985397 -Dinstall4j.cwd="$old_pwd" "$vmov_1" "$vmov_2" "$vmov_3" "$vmov_4" "$vmov_5" $INSTALL4J_ADD_VM_PARAMS -classpath "$local_classpath" install4j.Installer465309369  "$@"
 return_code=$?
-else
+else echo "$app_java_home"
 $INSTALL4J_JAVA_PREFIX "$app_java_home/bin/java" -Dexe4j.moduleName="$prg_dir/$progname" -Dexe4j.totalDataLength=1985397 -Dinstall4j.cwd="$old_pwd" $INSTALL4J_ADD_VM_PARAMS -classpath "$local_classpath" install4j.Installer465309369  "$@"
 return_code=$?
 fi
