@@ -414,19 +414,19 @@ bundled_jre_home="$app_home/jre"
 if [ "__i4j_lang_restart" = "$1" ]; then
   cd "$old_pwd"
 else
-cd "$prg_dir"/.
+  cd "$prg_dir"/.
 
-gunzip_path=`command -v gunzip 2> /dev/null`
-if [ "$?" -ne "0" ] || [ "W$gunzip_path" = "W" ]; then
-  gunzip_path=`which gunzip 2> /dev/null`
-  if [ "$?" -ne "0" ]; then
-    gunzip_path=""
+  gunzip_path=`command -v gunzip 2> /dev/null`
+  if [ "$?" -ne "0" ] || [ "W$gunzip_path" = "W" ]; then
+    gunzip_path=`which gunzip 2> /dev/null`
+    if [ "$?" -ne "0" ]; then
+      gunzip_path=""
+    fi
   fi
-fi
-if [ "W$gunzip_path" = "W" ]; then
-  echo "Sorry, but I could not find gunzip in path. Aborting."
-  exit 1
-fi
+  if [ "W$gunzip_path" = "W" ]; then
+    echo "Sorry, but I could not find gunzip in path. Aborting."
+    exit 1
+  fi
 
   if [ -d "$INSTALL4J_TEMP" ]; then
      sfx_dir_name="$INSTALL4J_TEMP/${progname}.$$.dir"
@@ -435,31 +435,46 @@ fi
   else
      sfx_dir_name="${progname}.$$.dir"
   fi
-mkdir "$sfx_dir_name" > /dev/null 2>&1
-if [ ! -d "$sfx_dir_name" ]; then
-  sfx_dir_name="/tmp/${progname}.$$.dir"
-  mkdir "$sfx_dir_name"
+  mkdir "$sfx_dir_name" > /dev/null 2>&1
   if [ ! -d "$sfx_dir_name" ]; then
-    echo "Could not create dir $sfx_dir_name. Aborting."
-    exit 1
+    sfx_dir_name="/tmp/${progname}.$$.dir"
+    mkdir "$sfx_dir_name"
+    if [ ! -d "$sfx_dir_name" ]; then
+      echo "Could not create dir $sfx_dir_name. Aborting."
+      exit 1
+    fi
   fi
-fi
-cd "$sfx_dir_name"
-if [ "$?" -ne "0" ]; then
+  cd "$sfx_dir_name"
+  if [ "$?" -ne "0" ]; then
     echo "The temporary directory could not created due to a malfunction of the cd command. Is the CDPATH variable set without a dot?"
     exit 1
-fi
-sfx_dir_name=`pwd`
-if [ "W$old_pwd" = "W$sfx_dir_name" ]; then
-    echo "The temporary directory could not created due to a malfunction of basic shell commands."
-    exit 1
-fi
-trap 'cd "$old_pwd"; rm -R -f "$sfx_dir_name"; exit 1' HUP INT QUIT TERM
-tail -c 1940671 "$prg_dir/${progname}" > sfx_archive.tar.gz 2> /dev/null
-if [ "$?" -ne "0" ]; then
-  tail -1940671c "$prg_dir/${progname}" > sfx_archive.tar.gz 2> /dev/null
+  fi
+  sfx_dir_name=`pwd`
+  if [ "W$old_pwd" = "W$sfx_dir_name" ]; then
+      echo "The temporary directory could not created due to a malfunction of basic shell commands."
+      exit 1
+  fi
+  trap 'cd "$old_pwd"; rm -R -f "$sfx_dir_name"; exit 1' HUP INT QUIT TERM
+  # tail -c 1940671 "$prg_dir/${progname}" > sfx_archive.tar.gz 2> /dev/null
+  # if [ "$?" -ne "0" ]; then
+  #   tail -1940671c "$prg_dir/${progname}" > sfx_archive.tar.gz 2> /dev/null
+  #   if [ "$?" -ne "0" ]; then
+  #     echo "tail didn't work. This could be caused by exhausted disk space. Aborting."
+  #     returnCode=1
+  #     cd "$old_pwd"
+  #     if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then
+  #       rm -R -f "$sfx_dir_name"
+  #     fi
+  #     exit $returnCode
+  #   fi
+  # fi
+  gunzip sfx_archive.tar.gz
   if [ "$?" -ne "0" ]; then
-    echo "tail didn't work. This could be caused by exhausted disk space. Aborting."
+    echo ""
+    echo "I am sorry, but the installer file seems to be corrupted."
+    echo "If you downloaded that file please try it again. If you"
+    echo "transfer that file with ftp please make sure that you are"
+    echo "using binary mode."
     returnCode=1
     cd "$old_pwd"
     if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then
@@ -467,31 +482,16 @@ if [ "$?" -ne "0" ]; then
     fi
     exit $returnCode
   fi
-fi
-gunzip sfx_archive.tar.gz
-if [ "$?" -ne "0" ]; then
-  echo ""
-  echo "I am sorry, but the installer file seems to be corrupted."
-  echo "If you downloaded that file please try it again. If you"
-  echo "transfer that file with ftp please make sure that you are"
-  echo "using binary mode."
-  returnCode=1
-  cd "$old_pwd"
-  if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then
-    rm -R -f "$sfx_dir_name"
+  tar xf sfx_archive.tar  > /dev/null 2>&1
+  if [ "$?" -ne "0" ]; then
+    echo "Could not untar archive. Aborting."
+    returnCode=1
+    cd "$old_pwd"
+    if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then
+      rm -R -f "$sfx_dir_name"
+    fi
+    exit $returnCode
   fi
-  exit $returnCode
-fi
-tar xf sfx_archive.tar  > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-  echo "Could not untar archive. Aborting."
-  returnCode=1
-  cd "$old_pwd"
-  if [ ! "W $INSTALL4J_KEEP_TEMP" = "W yes" ]; then
-    rm -R -f "$sfx_dir_name"
-  fi
-  exit $returnCode
-fi
 
 fi
 if [ "__i4j_extract_and_exit" = "$1" ]; then
@@ -517,8 +517,8 @@ if [ -f "$prg_dir/jre.tar.gz" ] && [ ! -f jre.tar.gz ] ; then
   cp "$prg_dir/jre.tar.gz" .
 fi
 
-
-if [ -f jre.tar.gz ]; then
+echo "Checking if jre.tar.gz exists in '$pwd' and is a file..."
+if [ -f jre.tar.gz ]; then echo "jre.tar.gz exists and is a file."
   echo "Unpacking JRE ..."
   gunzip jre.tar.gz
   mkdir jre
@@ -677,10 +677,10 @@ echo "Starting Installer ..."
 return_code=0
 umask 0022
 if [ "$has_space_options" = "true" ]; then echo "$app_java_home"
-$INSTALL4J_JAVA_PREFIX "$app_java_home/bin/java" -Dexe4j.moduleName="$prg_dir/$progname" -Dexe4j.totalDataLength=1985397 -Dinstall4j.cwd="$old_pwd" "$vmov_1" "$vmov_2" "$vmov_3" "$vmov_4" "$vmov_5" $INSTALL4J_ADD_VM_PARAMS -classpath "$local_classpath" install4j.Installer465309369  "$@"
+$INSTALL4J_JAVA_PREFIX "$app_java_home/bin/java" -Dexe4j.moduleName="$prg_dir/sfx_archive.tar.gz" -Dexe4j.totalDataLength=1985397 -Dinstall4j.cwd="$old_pwd" "$vmov_1" "$vmov_2" "$vmov_3" "$vmov_4" "$vmov_5" $INSTALL4J_ADD_VM_PARAMS -classpath "$local_classpath" install4j.Installer465309369  "$@"
 return_code=$?
 else echo "$app_java_home"
-$INSTALL4J_JAVA_PREFIX "$app_java_home/bin/java" -Dexe4j.moduleName="$prg_dir/$progname" -Dexe4j.totalDataLength=1985397 -Dinstall4j.cwd="$old_pwd" $INSTALL4J_ADD_VM_PARAMS -classpath "$local_classpath" install4j.Installer465309369  "$@"
+$INSTALL4J_JAVA_PREFIX "$app_java_home/bin/java" -Dexe4j.moduleName="$prg_dir/sfx_archive.tar.gz" -Dexe4j.totalDataLength=1985397 -Dinstall4j.cwd="$old_pwd" $INSTALL4J_ADD_VM_PARAMS -classpath "$local_classpath" install4j.Installer465309369  "$@"
 return_code=$?
 fi
 
