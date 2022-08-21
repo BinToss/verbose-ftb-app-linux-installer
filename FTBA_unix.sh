@@ -303,8 +303,8 @@ fi
     if [ -z "$app_java_home" ] && [ $tested_jvm = "false" ]; then echo "search_jre step 3: \$app_java_home is still empty and \$tested_jvm is false."
       if [ -f "$db_file" ]; then echo "search_jre step 3: attempting to silently delete \$db_file ('$db_file')..."
   rm "$db_file" 2> /dev/null
-      fi echo "search_jre step 3: Calling test_jvm with arg '\$app_home/../jre.bundle/Contents/Home' ('$app_home/../jre.bundle/Contents/Home')..."
-    test_jvm "$app_home/../jre.bundle/Contents/Home"
+      fi
+    echo "search_jre step 3: Calling test_jvm with arg '\$app_home/../jre.bundle/Contents/Home' ('$app_home/../jre.bundle/Contents/Home')..."; test_jvm "$app_home/../jre.bundle/Contents/Home"
   fi
 fi
 
